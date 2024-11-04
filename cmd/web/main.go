@@ -1,21 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"time"
 )
 
-func greet(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello World! %s", time.Now())
-}
-
-func greetHello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "I m greeting for go lang, Hello at %s", time.Now())
-}
-
 func main() {
-	http.HandleFunc("/da", greet)
-	http.HandleFunc("/hello", greetHello)
-	http.ListenAndServe(":8080", nil)
+
+	mux := routes()
+
+	log.Println("Server on 8080")
+	err := http.ListenAndServe(":8080", mux)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }

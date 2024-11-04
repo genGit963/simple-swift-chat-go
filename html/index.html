@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <title>SSCG</title>
+  </head>
+  <body class="w-full">
+    <!-- main div -->
+    <div class="mx-auto max-w-7xl">
+      <h1 class="text-teal-500 text-3xl font-bold underline">
+        Simple Swift Chat Go
+      </h1>
+
+      <div class="text-left">
+        <!-- username -->
+        <label for="username">Username:</label>
+        <input
+          type="text"
+          name="username"
+          id="username"
+          class="block w-1/3 p-1 border-2 border-gray-200"
+        />
+
+        <!-- text message -->
+        <label for="message">Message:</label>
+        <input
+          type="text"
+          name="message"
+          id="message"
+          class="block w-1/2 p-1 border-2 border-gray-200"
+        />
+      </div>
+
+      <!-- chatting and active person section -->
+      <div class="my-10 p-2 flex flex-row gap-4 space-between">
+        <!-- chatting -->
+        <div class="w-1/2 p-2 border-2 border-gray-200">
+          <h2 class="text-2xl text-center">Chattings</h2>
+          <hr />
+          <div id="chatbox" class="text-blue-600">
+            <p>mahesh</p>
+            <p>mahesh</p>
+            <p>mahesh</p>
+            <p>mahesh</p>
+            <p>mahesh</p>
+            <p>mahesh</p>
+            <p>mahesh</p>
+            <p>mahesh</p>
+          </div>
+        </div>
+
+        <!-- active persons -->
+        <div class="w-1/2 h-fit bg-gray-200">
+          <h2 class="text-2xl text-center">Active People</h2>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    let socket = null;
+
+    <!-- connect to websocket -->
+    document.addEventListener("DOMContentLoaded", function () {
+      socket = new WebSocket("ws://127.0.0.1:8080/ws");
+
+      socket.onopen = () => {
+        console.log("Successfully Connected !!");
+      };
+    });
+  </script>
+</html>
