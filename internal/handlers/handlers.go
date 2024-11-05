@@ -63,8 +63,8 @@ func WebsocketEndpoint(w http.ResponseWriter, r *http.Request) {
 	log.Println("WebsocketEndpoint: Client is connected to endpoint !")
 
 	var response WebsocketJsonResponse
-	response.Message = `<em><small>Connected to the server</small></em>`
-	// response.Message = `Connected to the server`
+	// response.Message = `<em><small>Connected to the server</small></em>`
+	response.Message = `Connected to the server`
 
 	conn := WebSocketConnection{Conn: ws}
 	clients[conn] = ""
