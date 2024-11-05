@@ -87,6 +87,16 @@
           chatElementList.appendChild(messageElement);
         }
       };
+
+      let usernameInputElement = document.getElementById("username");
+      usernameInputElement.addEventListener("change", function () {
+        let sendJsonData = {};
+        console.log("username: ", this);
+        sendJsonData.action = "username";
+        sendJsonData.username = this.nodeValue;
+
+        socket.send(JSON.stringify(sendJsonData));
+      });
     });
   </script>
 </html>
