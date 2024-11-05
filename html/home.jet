@@ -32,6 +32,8 @@
           id="message"
           class="block w-1/2 p-1 border-2 border-gray-200"
         />
+        <!-- action -->
+        <input type="hidden" name="action" id="action" class="hidden" />
       </div>
 
       <!-- chatting and active person section -->
@@ -40,15 +42,10 @@
         <div class="w-1/2 p-2 border-2 border-gray-200">
           <h2 class="text-2xl text-center">Chattings</h2>
           <hr />
-          <div id="chatbox" class="text-blue-800">
-            <p>mahesh</p>
-            <p>mahesh</p>
-            <p>mahesh</p>
-            <p>mahesh</p>
-            <p>mahesh</p>
-            <p>mahesh</p>
-            <p>mahesh</p>
-            <p>mahesh</p>
+          <div id="chatbox" class="text-blue-600">
+            <ul id="chatlist">
+              <li>Hellow</li>
+            </ul>
           </div>
         </div>
 
@@ -62,6 +59,7 @@
 
   <script>
     let socket = null;
+    const chatElementList = document.getElementById("chatlist");
 
     <!-- connect to websocket -->
     document.addEventListener("DOMContentLoaded", function () {
@@ -69,6 +67,24 @@
 
       socket.onopen = () => {
         console.log("Successfully Connected !!");
+      };
+
+      socket.onclose = () => {
+        console.log("Connection closed !!");
+      };
+
+      socket.onerror = () => {
+        console.log("Something error happend in websocket !!");
+      };
+
+      socket.onmessage = (msg) => {
+        console.log("ws message: ", msg);
+
+        if (msg) {
+          const messageElement = document.createElement("li");
+          messageElement.textContent = msg.data || "no message";
+          chatElementList.appendChild(messageElement);
+        }
       };
     });
   </script>

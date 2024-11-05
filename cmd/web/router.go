@@ -13,7 +13,7 @@ func routes() http.Handler {
 
 	// route home
 	mux.Get("/", http.HandlerFunc(handlers.Home))
-	mux.Get("/ws", http.HandlerFunc(handlers.WSEndpoint))
+	mux.Get("/ws", http.HandlerFunc(handlers.WebsocketEndpoint))
 
 	return mux
 }

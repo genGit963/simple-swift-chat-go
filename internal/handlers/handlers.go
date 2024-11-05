@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,6 +11,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// channels
+var websocketChannel = make(chan WebsocketPayload)
+var clients = make(map[WebSocketConnection]string)
+
+// views
 var views = jet.NewSet(
 	jet.NewOSFileSystemLoader("./html"),
 	jet.InDevelopmentMode(),
@@ -33,30 +39,86 @@ func Home(w http.ResponseWriter, r *http.Request) {
 }
 
 // websocket sections
-type WsJsonResponse struct {
+type WebSocketConnection struct {
+	*websocket.Conn
+}
+type WebsocketJsonResponse struct {
 	Action       string `json:"action"`
 	Message      string `json:"message"`
 	Message_Type string `json:"message_type"`
 }
+type WebsocketPayload struct {
+	Action   string              `json:"action"`
+	Username string              `json:"username"`
+	Message  string              `json:"message"`
+	Conn     WebSocketConnection `json:"_"`
+}
 
-func WSEndpoint(w http.ResponseWriter, r *http.Request) {
+func WebsocketEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	ws, err := upgradeConnection.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("WSEndpoint 1: ", err)
+		log.Println("WebsocketEndpoint 1: ", err)
 	}
-	log.Println("Client is connected to endpoint !")
+	log.Println("WebsocketEndpoint: Client is connected to endpoint !")
 
-	var response WsJsonResponse
+	var response WebsocketJsonResponse
 	response.Message = `<em><small>Connected to the server</small></em>`
+	// response.Message = `Connected to the server`
 
-	log.Println("Dispatching ws response...")
+	conn := WebSocketConnection{Conn: ws}
+	clients[conn] = ""
+
 	err = ws.WriteJSON(response)
 	if err != nil {
-		log.Println("WSEndpoint 2: ", err)
+		log.Println("WebsocketEndpoint 2: ", err)
 	}
-	log.Println("Dispatching Done !")
 
+	go ListenForWebsocket(&conn)
+}
+
+func ListenForWebsocket(conn *WebSocketConnection) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Error, ListenForWebsocket 1: ", fmt.Sprintf("%v", r))
+		}
+	}()
+
+	var payload WebsocketPayload
+
+	for {
+		err := conn.ReadJSON(&payload)
+		if err != nil {
+			log.Println("Error, ListenForWebsocket 2: ", err)
+		} else {
+			payload.Conn = *conn
+			websocketChannel <- payload
+			log.Println("websocketChannel")
+		}
+	}
+}
+
+func ListenToWebsocketChannel() {
+	var response WebsocketJsonResponse
+
+	for {
+		messageFromWSChannel := <-websocketChannel
+
+		response.Action = "Message Received !"
+		response.Message = fmt.Sprintf("Some message, and action was %s", messageFromWSChannel.Action)
+		boardcastToAllUser(response)
+	}
+}
+
+func boardcastToAllUser(response WebsocketJsonResponse) {
+	for client := range clients {
+		err := client.WriteJSON(response)
+		if err != nil {
+			log.Println("Error, boardcastToAllUser: ", err)
+			_ = client.Close()
+			delete(clients, client)
+		}
+	}
 }
 
 // renderPages
