@@ -52,19 +52,19 @@
       <div class="my-10 p-2 flex flex-row gap-4 space-between">
         <!-- chatting -->
         <div class="w-1/2 p-2 border-2 border-gray-200">
-          <h2 class="text-2xl text-center">Chattings</h2>
-          <hr />
+          <h2 class="text-2xl text-center">Chatting</h2>
           <div id="chatbox" class="text-blue-600">
             <ul id="chatlist">
-              <li>Hellow</li>
+              <h3 class="text-1xl text-gray-300">chats</h3>
+              <hr />
             </ul>
           </div>
         </div>
 
         <!-- active persons -->
-        <div class="w-1/2 h-fit bg-gray-200">
+        <div class="w-1/2 p-2 h-fit bg-gray-200">
           <h2 class="text-2xl text-center">Active People</h2>
-          <ul id="active-list"></ul>
+          <ul id="active-list" class="gap-1"></ul>
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@
 
   <script>
     let socket = null;
-    const chatElementList = document.getElementById("chatlist");
+    const chatsListElement = document.getElementById("chatlist");
 
     window.onbeforeunload = function () {
       console.log("Leaving...");
@@ -100,9 +100,10 @@
 
       const activeUsersListElement = document.getElementById("active-list");
       socket.onmessage = (message) => {
-        const jsonMessage = JSON.parse(message.data);
+        const websocketResponseData = JSON.parse(message.data);
+        console.log("websocketResponse.data: ", websocketResponseData);
 
-        switch (jsonMessage.action) {
+        switch (websocketResponseData.action) {
           case "list_users":
             console.log("list_users");
             while (activeUsersListElement.firstChild) {
@@ -110,27 +111,26 @@
                 activeUsersListElement.firstChild
               );
             }
-            if (jsonMessage.connected_users.length > 0) {
-              jsonMessage.connected_users.forEach((connected_user) => {
-                if (connected_user != "") {
-                  const activeUserElement = document.createElement("li");
-                  activeUserElement.textContent = connected_user;
-                  activeUsersListElement.appendChild(activeUserElement);
+            if (websocketResponseData.connected_users.length > 0) {
+              websocketResponseData.connected_users.forEach(
+                (connected_user) => {
+                  if (connected_user != "") {
+                    const activeUserElement = document.createElement("li");
+                    activeUserElement.textContent = connected_user;
+                    activeUsersListElement.appendChild(activeUserElement);
+                  }
                 }
-              });
+              );
             }
             break;
+
+          case "broadcast":
+            const messageElement = document.createElement("li");
+            messageElement.textContent = websocketResponseData?.message || null;
+            messageElement.textContent &&
+              chatsListElement.appendChild(messageElement);
           default:
             console.log("no users");
-        }
-
-        if (message) {
-          const jsonMessageReceived = JSON.parse(message?.data);
-          console.log("ws message: ", message);
-          const messageElement = document.createElement("li");
-          messageElement.textContent =
-            jsonMessageReceived?.message || "no message";
-          chatElementList.appendChild(messageElement);
         }
       };
 
@@ -146,8 +146,16 @@
     });
 
     function sendMessage() {
-      const inputElementMessage = document.getElementById("message").value;
+      console.log("sending message...");
+      const inputMessageElement = document.getElementById("message");
       const jsonWSPayloadData = {};
+      jsonWSPayloadData.username = document.getElementById("username").value;
+      jsonWSPayloadData.action = "broadcast";
+      jsonWSPayloadData.message = inputMessageElement.value;
+
+      socket.send(JSON.stringify(jsonWSPayloadData));
+      inputMessageElement.value = "";
+      console.log("\n\n sent :", jsonWSPayloadData);
     }
   </script>
 </html>

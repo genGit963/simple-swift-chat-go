@@ -93,7 +93,7 @@ func listenForWebsocket(conn *WebSocketConnection) {
 		} else {
 			payload.Conn = *conn
 			websocketChannel <- payload
-			log.Println("websocketChannel : ", payload)
+			log.Println("\n ---> listenForWebsocket __ websocketChannel : ", payload)
 		}
 	}
 }
@@ -109,14 +109,21 @@ func ListenToWebsocketChannel() {
 			users := getAllUser()
 			response.Action = "list_users"
 			response.ConnectedUsers = users
-			boardcastToAllUser(response)
+			broadcastToAllUser(response)
 
 		case "left":
 			response.Action = "list_users"
 			delete(clients, messageFromWSChannel.Conn)
 			users := getAllUser()
 			response.ConnectedUsers = users
-			boardcastToAllUser(response)
+			broadcastToAllUser(response)
+
+		case "broadcast":
+			log.Println("\n case: broadcast, ---> ListenToWebsocketChannel __ messageFromWSChannel : ", messageFromWSChannel)
+			response.Action = "broadcast"
+			response.Message = fmt.Sprintf("%s: %s", messageFromWSChannel.Username, messageFromWSChannel.Message)
+			broadcastToAllUser(response)
+			response.Message = ""
 		}
 	}
 }
@@ -130,11 +137,11 @@ func getAllUser() []string {
 	return userList
 }
 
-func boardcastToAllUser(response WebsocketJsonResponse) {
+func broadcastToAllUser(response WebsocketJsonResponse) {
 	for client := range clients {
 		err := client.WriteJSON(response)
 		if err != nil {
-			log.Println("Error, boardcastToAllUser 1: ", err)
+			log.Println("Error, broadcastToAllUser 1: ", err)
 			_ = client.Close()
 			delete(clients, client)
 		}
