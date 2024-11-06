@@ -13,7 +13,13 @@
       <h1 class="text-teal-500 text-3xl font-bold underline">
         Simple Swift Chat Go
       </h1>
-
+      <p>
+        <a
+          href="https://github.com/genGit963/simple-swift-chat-go"
+          class="text-blue-500 underline"
+          >Its repo</a
+        >
+      </p>
       <div class="text-left">
         <!-- username -->
         <label for="username">Username:</label>
@@ -21,7 +27,7 @@
           type="text"
           name="username"
           id="username"
-          class="block w-1/3 p-1 border-2 border-gray-200"
+          class="block m-2 w-1/3 p-1 border-2 border-gray-200"
         />
 
         <!-- text message -->
@@ -30,10 +36,16 @@
           type="text"
           name="message"
           id="message"
-          class="block w-1/2 p-1 border-2 border-gray-200"
+          class="block m-2 w-1/2 p-1 border-2 border-gray-200"
         />
         <!-- action -->
         <input type="hidden" name="action" id="action" class="hidden" />
+        <button
+          class="bg-blue-700 text-white p-2 m-2 rounded-md"
+          onclick="sendMessage()"
+        >
+          Send Message
+        </button>
       </div>
 
       <!-- chatting and active person section -->
@@ -52,6 +64,7 @@
         <!-- active persons -->
         <div class="w-1/2 h-fit bg-gray-200">
           <h2 class="text-2xl text-center">Active People</h2>
+          <ul id="active-list"></ul>
         </div>
       </div>
     </div>
@@ -60,6 +73,14 @@
   <script>
     let socket = null;
     const chatElementList = document.getElementById("chatlist");
+
+    window.onbeforeunload = function () {
+      console.log("Leaving...");
+      let jsonWSPayloadData = {};
+      jsonWSPayloadData.action = "left";
+
+      socket.send(JSON.stringify(jsonWSPayloadData));
+    };
 
     <!-- connect to websocket -->
     document.addEventListener("DOMContentLoaded", function () {
@@ -77,10 +98,35 @@
         console.log("Something error happend in websocket !!");
       };
 
+      const activeUsersListElement = document.getElementById("active-list");
       socket.onmessage = (message) => {
+        const jsonMessage = JSON.parse(message.data);
+
+        switch (jsonMessage.action) {
+          case "list_users":
+            console.log("list_users");
+            while (activeUsersListElement.firstChild) {
+              activeUsersListElement.removeChild(
+                activeUsersListElement.firstChild
+              );
+            }
+            if (jsonMessage.connected_users.length > 0) {
+              jsonMessage.connected_users.forEach((connected_user) => {
+                if (connected_user != "") {
+                  const activeUserElement = document.createElement("li");
+                  activeUserElement.textContent = connected_user;
+                  activeUsersListElement.appendChild(activeUserElement);
+                }
+              });
+            }
+            break;
+          default:
+            console.log("no users");
+        }
+
         if (message) {
           const jsonMessageReceived = JSON.parse(message?.data);
-          console.log("ws message: ", jsonMessageReceived.message);
+          console.log("ws message: ", message);
           const messageElement = document.createElement("li");
           messageElement.textContent =
             jsonMessageReceived?.message || "no message";
@@ -90,13 +136,18 @@
 
       let usernameInputElement = document.getElementById("username");
       usernameInputElement.addEventListener("change", function () {
-        let sendJsonData = {};
+        let sendJsonWSPayloadData = {};
         console.log("username: ", this);
-        sendJsonData.action = "username";
-        sendJsonData.username = this.nodeValue;
+        sendJsonWSPayloadData.action = "username";
+        sendJsonWSPayloadData.username = this.value;
 
-        socket.send(JSON.stringify(sendJsonData));
+        socket.send(JSON.stringify(sendJsonWSPayloadData));
       });
     });
+
+    function sendMessage() {
+      const inputElementMessage = document.getElementById("message").value;
+      const jsonWSPayloadData = {};
+    }
   </script>
 </html>

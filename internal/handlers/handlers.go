@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/CloudyKit/jet/v6"
 	"github.com/gorilla/websocket"
@@ -43,9 +44,10 @@ type WebSocketConnection struct {
 	*websocket.Conn
 }
 type WebsocketJsonResponse struct {
-	Action       string `json:"action"`
-	Message      string `json:"message"`
-	Message_Type string `json:"message_type"`
+	Action         string   `json:"action"`
+	Message        string   `json:"message"`
+	Message_Type   string   `json:"message_type"`
+	ConnectedUsers []string `json:"connected_users"`
 }
 type WebsocketPayload struct {
 	Action   string              `json:"action"`
@@ -55,12 +57,11 @@ type WebsocketPayload struct {
 }
 
 func WebsocketEndpoint(w http.ResponseWriter, r *http.Request) {
-
 	ws, err := upgradeConnection.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("WebsocketEndpoint 1: ", err)
 	}
-	log.Println("WebsocketEndpoint: Client is connected to endpoint !")
+	log.Println("WebsocketEndpoint 2: Client is connected to endpoint !")
 
 	var response WebsocketJsonResponse
 	// response.Message = `<em><small>Connected to the server</small></em>`
@@ -68,16 +69,16 @@ func WebsocketEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	conn := WebSocketConnection{Conn: ws}
 	clients[conn] = ""
-
 	err = ws.WriteJSON(response)
 	if err != nil {
-		log.Println("WebsocketEndpoint 2: ", err)
+		log.Println("WebsocketEndpoint 2[error]: ", err)
 	}
 
-	go ListenForWebsocket(&conn)
+	go listenForWebsocket(&conn)
 }
 
-func ListenForWebsocket(conn *WebSocketConnection) {
+func listenForWebsocket(conn *WebSocketConnection) {
+	log.Println("ListenForWebsocket conn: ", *conn)
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Error, ListenForWebsocket 1: ", fmt.Sprintf("%v", r))
@@ -85,7 +86,6 @@ func ListenForWebsocket(conn *WebSocketConnection) {
 	}()
 
 	var payload WebsocketPayload
-
 	for {
 		err := conn.ReadJSON(&payload)
 		if err != nil {
@@ -93,7 +93,7 @@ func ListenForWebsocket(conn *WebSocketConnection) {
 		} else {
 			payload.Conn = *conn
 			websocketChannel <- payload
-			log.Println("websocketChannel")
+			log.Println("websocketChannel : ", payload)
 		}
 	}
 }
@@ -103,18 +103,38 @@ func ListenToWebsocketChannel() {
 
 	for {
 		messageFromWSChannel := <-websocketChannel
+		switch messageFromWSChannel.Action {
+		case "username":
+			clients[messageFromWSChannel.Conn] = messageFromWSChannel.Username
+			users := getAllUser()
+			response.Action = "list_users"
+			response.ConnectedUsers = users
+			boardcastToAllUser(response)
 
-		response.Action = "Message Received !"
-		response.Message = fmt.Sprintf("Some message, and action was %s", messageFromWSChannel.Action)
-		boardcastToAllUser(response)
+		case "left":
+			response.Action = "list_users"
+			delete(clients, messageFromWSChannel.Conn)
+			users := getAllUser()
+			response.ConnectedUsers = users
+			boardcastToAllUser(response)
+		}
 	}
+}
+
+func getAllUser() []string {
+	var userList []string
+	for _, client := range clients {
+		userList = append(userList, client)
+	}
+	sort.Strings(userList)
+	return userList
 }
 
 func boardcastToAllUser(response WebsocketJsonResponse) {
 	for client := range clients {
 		err := client.WriteJSON(response)
 		if err != nil {
-			log.Println("Error, boardcastToAllUser: ", err)
+			log.Println("Error, boardcastToAllUser 1: ", err)
 			_ = client.Close()
 			delete(clients, client)
 		}
