@@ -119,9 +119,9 @@ func ListenToWebsocketChannel() {
 			broadcastToAllUser(response)
 
 		case "broadcast":
-			log.Println("\n case: broadcast, ---> ListenToWebsocketChannel __ messageFromWSChannel : ", messageFromWSChannel)
+			log.Println("\n ---> ListenToWebsocketChannel __ messageFromWSChannel : ", messageFromWSChannel)
 			response.Action = "broadcast"
-			response.Message = fmt.Sprintf("%s: %s", messageFromWSChannel.Username, messageFromWSChannel.Message)
+			response.Message = fmt.Sprintf("<li><strong>%s</strong>: %s<li>", messageFromWSChannel.Username, messageFromWSChannel.Message)
 			broadcastToAllUser(response)
 			response.Message = ""
 		}

@@ -10,7 +10,7 @@
   <body class="w-full">
     <!-- main div -->
     <div class="mx-auto max-w-7xl">
-      <h1 class="text-teal-500 text-3xl font-bold underline">
+      <h1 class="my-4 p-1 text-teal-500 text-3xl font-bold underline">
         Simple Swift Chat Go
       </h1>
       <p>
@@ -20,6 +20,7 @@
           >Its repo</a
         >
       </p>
+      <div class="my-10 p-1" id="show-status"></div>
       <div class="text-left">
         <!-- username -->
         <label for="username">Username:</label>
@@ -86,11 +87,16 @@
     document.addEventListener("DOMContentLoaded", function () {
       socket = new WebSocket("ws://127.0.0.1:8080/ws");
 
+      const statusDiv = document.getElementById("show-status");
+      const connectedElement = `<p class="w-1/4 px-2 py-1 bg-green-600 text-white text-center rounded-md">Connected</p> `;
+      const notConnectedElement = `<p class=" w-1/4 px-2 py-1 bg-red-600 text-center text-white rounded-md">Not Connected</p> `;
       socket.onopen = () => {
+        statusDiv.innerHTML = connectedElement;
         console.log("Successfully Connected !!");
       };
 
       socket.onclose = () => {
+        statusDiv.innerHTML = notConnectedElement;
         console.log("Connection closed !!");
       };
 
@@ -125,10 +131,13 @@
             break;
 
           case "broadcast":
-            const messageElement = document.createElement("li");
-            messageElement.textContent = websocketResponseData?.message || null;
-            messageElement.textContent &&
-              chatsListElement.appendChild(messageElement);
+            const messageElement = document.getElementById("chatlist");
+            messageElement.insertAdjacentHTML(
+              "beforeend",
+              websocketResponseData?.message
+            );
+            break;
+
           default:
             console.log("no users");
         }
@@ -158,4 +167,6 @@
       console.log("\n\n sent :", jsonWSPayloadData);
     }
   </script>
+</html>
+ipt>
 </html>
